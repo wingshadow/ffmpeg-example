@@ -1,5 +1,14 @@
 package com.beaver.live.demo;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileNameUtil;
+import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
+import cn.hutool.crypto.symmetric.SymmetricCrypto;
+import io.lindstrom.m3u8.model.MasterPlaylist;
+import io.lindstrom.m3u8.model.MediaPlaylist;
+import io.lindstrom.m3u8.model.MediaSegment;
+import io.lindstrom.m3u8.parser.MasterPlaylistParser;
+import io.lindstrom.m3u8.parser.MediaPlaylistParser;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -7,11 +16,10 @@ import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacv.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @program: ffmpeg-example
@@ -115,8 +123,70 @@ public class FFmpegUtils {
         grabber.release();
     }
 
+    public static void m3u8ToMP4() throws IOException {
+        MediaPlaylistParser parser = new MediaPlaylistParser();
+        MediaPlaylist playlist = parser.readPlaylist(Paths.get("D:\\hls\\m3u8\\index.m3u8"));
+        List<MediaSegment> list = playlist.mediaSegments();
+        List<String> files = list.stream().map(mediaSegment -> mediaSegment.uri()).collect(Collectors.toList());
+
+        List<File> fileList = new ArrayList<>();
+        files.forEach(s -> {
+            fileList.add(new File("D:\\hls\\m3u8\\" + s));
+        });
+        mergeFile(fileList,"",false);
+    }
+
+    public static void mergeFile(List<File> collect, String key, boolean needDecode) {
+        Collections.sort(collect, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                int i1 = Integer.parseInt(FileNameUtil.getPrefix(o1).replace("test-", ""));
+                int i2 = Integer.parseInt(FileNameUtil.getPrefix(o2).replace("test-", ""));
+                return i1 - i2;
+            }
+        });
+        for (int i = 0; i < collect.size(); i++) {
+            System.out.println(collect.get(i).getName());
+        }
+        File finalOutPutFile = new File("d:\\hls\\demo.mp4");
+
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(finalOutPutFile, true);
+            for (int i = 0; i < collect.size(); i++) {
+                FileInputStream fileInputStream = new FileInputStream(collect.get(i));
+                byte b[] = new byte[4096];
+                int size = -1;
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                while ((size = fileInputStream.read(b, 0, b.length)) != -1) {
+                    byteArrayOutputStream.write(b, 0, size);
+                }
+                fileInputStream.close();
+                byte[] bytes = byteArrayOutputStream.toByteArray();
+                byteArrayOutputStream.close();
+                byte[] newbyte;
+                if (needDecode) {
+                    SymmetricCrypto aes = new SymmetricCrypto(SymmetricAlgorithm.AES, key.getBytes());
+                    newbyte = aes.decrypt(bytes);
+                } else {
+                    newbyte = bytes;
+                }
+                fileOutputStream.write(newbyte);
+
+            }
+            if (fileOutputStream != null) {
+                fileOutputStream.close();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         //FFmpegUtils.mp4Tom3u8One();
-        FFmpegUtils.mp4Tom3u8Two();
+        //FFmpegUtils.mp4Tom3u8Two();
+        FFmpegUtils.m3u8ToMP4();
+        //File file = new File("D:\\hls\\m3u8");
+        //FFmpegUtils.mergeFile(file,"",false);
     }
 }
