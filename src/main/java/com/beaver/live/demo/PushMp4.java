@@ -22,12 +22,12 @@ public class PushMp4 {
     /**
      * 本地MP4文件的完整路径(两分零五秒的视频)
      */
-    private static final String MP4_FILE_PATH = "D:\\broadcast\\1.mp4";
+    private static final String MP4_FILE_PATH = "/976675899_nb3-1-16.mp4";
 
     /**
      * SRS的推流地址
      */
-    private static final String SRS_PUSH_ADDRESS = "rtmp://192.168.3.144:1935/live/1";
+    private static final String SRS_PUSH_ADDRESS = "rtmp://192.168.3.144:1935/live/2";
 
     /**
      * 读取指定的mp4文件，推送到SRS服务器
