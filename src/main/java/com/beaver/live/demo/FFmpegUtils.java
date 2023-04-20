@@ -184,6 +184,12 @@ public class FFmpegUtils {
         }
     }
 
+    /**
+     * 添加字幕
+     * @param inputVideoFile
+     * @param outputVideoFile
+     * @throws IOException
+     */
     public static void addSubtitle(String inputVideoFile, String outputVideoFile) throws IOException {
 
 
